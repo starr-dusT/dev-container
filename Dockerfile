@@ -1,12 +1,6 @@
-# https://github.com/starr-dusT/dotfiles
-# Usage: docker build -t <image name> .
-#        docker run -d --name <image name> -p 8080:8080 -v .:/root/src -it <container name>
+# https://github.com/starr-dusT/dev-container
 
-ARG VARIANT="3.18.3"
-
-# Pull alpine container from IronBank (See readme to setup pulling from IronBank with Docker)
-FROM "alpine:latest"
-#FROM "registry1.dso.mil/ironbank/opensource/alpinelinux/alpine:${VARIANT}"
+FROM "alpine:edge"
 
 ##### BASE CONFIG #####
  
@@ -30,20 +24,22 @@ RUN pip install \
 
 # Install other useful packages
 RUN apk add --no-check-certificate --virtual .useful-packs \
-    bash tmux git stow openssh vim nano
+    bash tmux git openssh vim nano curl
 
 ##### PERSONAL CONFIG #####
 
 # clone dotfiles
 RUN sh -c "$(curl -fsLS get.chezmoi.io)"
-ENV PATH="/home/dev/bin:${PATH}"
+ENV PATH="/root/bin:${PATH}"
 RUN chezmoi init --apply https://github.com/starr-dusT/dotfiles
 
 # Install other useful packages
 RUN apk add --no-check-certificate --virtual .user-packs \
     neovim cargo npm go
-# Install plugins in image
+
+# Install plugins in image and Mason LSPs 
 RUN nvim --headless "+Lazy! sync" +qa
+RUN nvim --headless +"MasonInstall pyright typescript-language-server lua-language-server beancount-language-server gopls" +q
 
 WORKDIR /root
 CMD ["/bin/bash"]
